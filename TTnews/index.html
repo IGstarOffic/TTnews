@@ -1,1 +1,624 @@
-<!DOCTYPE html><html lang="ru"><head>    <meta charset="UTF-8">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <title>TikTok Pulse | Новостная карусель</title>    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">    <style>        :root {            --primary: #FE2C55;            --secondary: #25F4EE;            --dark: #121212;            --light: #f8f9fa;            --gray: #6c757d;            --card-width: 80vw;            --card-height: 70vh;        }        * {            margin: 0;            padding: 0;            box-sizing: border-box;        }        body {            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;            background-color: var(--dark);            color: var(--light);            overflow-x: hidden;            height: 100vh;            display: flex;            flex-direction: column;        }        @font-face {            font-family: 'Inter';            src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');        }        header {            padding: 1.5rem;            display: flex;            justify-content: space-between;            align-items: center;            background: rgba(18, 18, 18, 0.8);            backdrop-filter: blur(10px);            position: fixed;            width: 100%;            z-index: 100;            border-bottom: 1px solid rgba(255, 255, 255, 0);        }        .logo {            display: flex;            align-items: center;            gap: 0.75rem;            font-weight: 700;            font-size: 1.5rem;        }        .logo-icon {            color: var(--primary);            font-size: 1.8rem;        }        .carousel-container {            flex: 1;            display: flex;            align-items: center;            justify-content: center;            position: relative;            padding: 2rem;            margin-top: 80px;        }        .carousel {            display: flex;            width: var(--card-width);            height: var(--card-height);            position: relative;            perspective: 1000px;        }        .news-card {            position: absolute;            width: 100%;            height: 100%;            background: rgb(62, 62, 62);            border-radius: 20px;            overflow: hidden;            backdrop-filter: blur(10px);            border: 1px solid rgb(66, 66, 66);            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);            display: flex;            flex-direction: column;            opacity: 0;            transform: translateX(100%) scale(0.8);            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);            z-index: 1;        }        .news-card.active {            opacity: 1;            transform: translateX(0) scale(1);            z-index: 10;        }        .news-card.prev {            opacity: 0.7;            transform: translateX(-80%) scale(0.85);            z-index: 5;            pointer-events: none;        }        .news-card.next {            opacity: 0.7;            transform: translateX(80%) scale(0.85);            z-index: 5;            pointer-events: none;        }        /* Анимация для пагинации */        .pagination-dot {            width: 10px;            height: 10px;            border-radius: 50%;            background: rgba(255, 255, 255, 0.3);            cursor: pointer;            transition: all 0.3s ease;        }        .pagination-dot.active {            background: var(--primary);            transform: scale(1.2);        }        /* Анимация для кнопок навигации */        .nav-btn {            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);        }        .nav-btn:active {            transform: translateY(-50%) scale(0.9);        }        .news-card.active {            opacity: 1;            transform: translateX(0) scale(1);            z-index: 10;        }        .news-image-container {            height: 60%;            width: 100%;            position: relative;            overflow: hidden;        }        .news-image {            width: 100%;            height: 100%;            object-fit: cover;            transition: transform 0.5s ease;        }        .news-card:hover .news-image {            transform: scale(1.05);        }        .no-image {            height: 100%;            width: 100%;            background: linear-gradient(135deg, #FE2C55, #25F4EE);            display: flex;            align-items: center;            justify-content: center;            color: white;            font-size: 1.2rem;        }        .news-content {            padding: 1.5rem;            display: flex;            flex-direction: column;            height: 40%;        }        .news-date {            color: var(--secondary);            font-size: 0.8rem;            font-weight: 500;            margin-bottom: 0.5rem;        }        .news-title {            font-size: 1.5rem;            font-weight: 600;            margin-bottom: 1rem;            line-height: 1.3;            display: -webkit-box;            -webkit-line-clamp: 2;            -webkit-box-orient: vertical;            overflow: hidden;        }        .news-excerpt {            color: rgb(225, 250, 251);            font-size: 0.95rem;            line-height: 1.5;            margin-bottom: 1.5rem;            flex: 1;            display: -webkit-box;            -webkit-line-clamp: 3;            -webkit-box-orient: vertical;            overflow: hidden;        }        .read-more {            display: inline-flex;            align-items: center;            gap: 0.5rem;            color: var(--primary);            text-decoration: none;            font-weight: 600;            font-size: 0.9rem;            transition: color 0.3s;        }        .read-more:hover {            color: var(--secondary);        }        .nav-btn {            position: absolute;            top: 50%;            transform: translateY(-50%);            width: 50px;            height: 50px;            background: rgba(255, 255, 255, 0.1);            border-radius: 50%;            display: flex;            align-items: center;            justify-content: center;            cursor: pointer;            z-index: 20;            border: none;            color: white;            font-size: 1.2rem;            transition: all 0.3s;            backdrop-filter: blur(5px);        }        .nav-btn:hover {            background: rgba(255, 255, 255, 0.2);            transform: translateY(-50%) scale(1.1);        }        .prev-btn {            left: 2rem;        }        .next-btn {            right: 2rem;        }        .pagination {            position: absolute;            bottom: 1.5rem;            left: 50%;            transform: translateX(-50%);            display: flex;            gap: 0.5rem;            z-index: 20;        }        .loader {            position: absolute;            top: 50%;            left: 50%;            transform: translate(-50%, -50%);            display: flex;            flex-direction: column;            align-items: center;            gap: 1rem;        }        .spinner {            width: 50px;            height: 50px;            border: 3px solid rgba(255, 255, 255, 0.1);            border-top-color: var(--primary);            border-radius: 50%;            animation: spin 1s linear infinite;        }        @keyframes spin {            to { transform: rotate(360deg); }        }        .loading-text {            color: var(--light);            font-weight: 500;        }        footer {            padding: 1.5rem;            text-align: center;            background: rgba(18, 18, 18, 0.8);            backdrop-filter: blur(10px);            border-top: 1px solid rgba(255, 255, 255, 0.1);            font-size: 0.9rem;            color: var(--gray);        }        @media (max-width: 768px) {            :root {                --card-width: 90vw;                --card-height: 65vh;            }            header {                padding: 1rem;            }            .logo {                font-size: 1.2rem;            }            .nav-links {                display: none;            }            .news-title {                font-size: 1.2rem;            }            .nav-btn {                width: 40px;                height: 40px;                font-size: 1rem;            }            .prev-btn {                left: 0.5rem;            }            .next-btn {                right: 0.5rem;            }        }    </style></head><body><header>    <div class="logo">        <i class="fas fa-play-circle logo-icon"></i>        <span>TikTok Pulse</span>    </div></header><div class="carousel-container">    <button class="nav-btn prev-btn" id="prevBtn">        <i class="fas fa-chevron-left"></i>    </button>    <div class="carousel" id="carousel">        <div class="loader">            <div class="spinner"></div>            <div class="loading-text">Загрузка новостей...</div>        </div>    </div>    <button class="nav-btn next-btn" id="nextBtn">        <i class="fas fa-chevron-right"></i>    </button>    <div class="pagination" id="pagination"></div></div><footer>    © 2025 TikTok Pulse | Сделано IGstar</footer><script>    document.addEventListener('DOMContentLoaded', function() {        const rssUrl = 'http://feed.vk4rss.ru/xml/44b023ead183dfc5bb6aab138920131b.xml';        const carousel = document.getElementById('carousel');        const prevBtn = document.getElementById('prevBtn');        const nextBtn = document.getElementById('nextBtn');        const pagination = document.getElementById('pagination');        let newsItems = [];        let currentIndex = 0;        let autoScrollInterval;        // Используем CORS-прокси        const proxyUrl = 'https://api.allorigins.win/get?url=';        fetch(proxyUrl + encodeURIComponent(rssUrl))            .then(response => {                if (!response.ok) throw new Error('Ошибка сети');                return response.json();            })            .then(data => {                const parser = new DOMParser();                const xmlDoc = parser.parseFromString(data.contents, "text/xml");                const items = xmlDoc.querySelectorAll('item');                if (items.length === 0) {                    showError('Новости не найдены');                    return;                }                // Очищаем загрузчик                carousel.innerHTML = '';                // Создаем карточки для новостей                items.forEach((item, index) => {                    const title = 'TikTok Pulse';                    const description = item.querySelector('description')?.textContent || '';                    const pubDate = item.querySelector('pubDate')?.textContent || '';                    const link = item.querySelector('link')?.textContent || '#';                    const guid = item.querySelector('guid')?.textContent || link;                    // Извлекаем первую картинку из описания                    let imageUrl = '';                    const enclosure = item.querySelector('enclosure');                    if (enclosure) {                        imageUrl = enclosure.getAttribute('url');                    }                    // Форматируем дату                    let formattedDate = '';                    if (pubDate) {                        const dateObj = new Date(pubDate);                        formattedDate = dateObj.toLocaleDateString('ru-RU', {                            day: 'numeric',                            month: 'long',                            year: 'numeric',                            hour: '2-digit',                            minute: '2-digit'                        });                    }                    // Очищаем текст от HTML-тегов                    const cleanText = description.replace(/<[^>]*>?/gm, '');                    // Создаем элемент карточки                    const card = document.createElement('div');                    card.className = 'news-card';                    card.dataset.index = index;                    card.innerHTML = `                            <div class="news-image-container">                                ${imageUrl                        ? `<img src="${imageUrl}" class="news-image" alt="${title}">`                        : `<div class="no-image">TikTok News</div>`                    }                            </div>                            <div class="news-content">                                <span class="news-date">${formattedDate}</span>                                <h3 class="news-title">${title}</h3>                                <p class="news-excerpt">${cleanText.substring(0, 200)}...</p>                                <a href="javascript:void(0);" class="read-more" data-guid="${guid}" data-title="${encodeURIComponent(title)}" data-description="${encodeURIComponent(cleanText)}" data-image="${encodeURIComponent(imageUrl)}" data-date="${encodeURIComponent(formattedDate)}">                                    Читать полностью <i class="fas fa-arrow-right"></i>                                </a>                            </div>                        `;                    carousel.appendChild(card);                    newsItems.push(card);                    // Добавляем точку пагинации                    const dot = document.createElement('div');                    dot.className = 'pagination-dot';                    dot.dataset.index = index;                    dot.addEventListener('click', () => goToSlide(index));                    pagination.appendChild(dot);                });                // Добавляем обработчики для кнопок "Читать полностью"                document.querySelectorAll('.read-more').forEach(button => {                    button.addEventListener('click', function() {                        const guid = this.getAttribute('data-guid');                        const title = decodeURIComponent(this.getAttribute('data-title'));                        const description = decodeURIComponent(this.getAttribute('data-description'));                        const image = decodeURIComponent(this.getAttribute('data-image'));                        const date = decodeURIComponent(this.getAttribute('data-date'));                        // Сохраняем данные новости в sessionStorage                        sessionStorage.setItem('currentNews', JSON.stringify({                            title: title,                            description: description,                            image: image,                            date: date,                            guid: guid                        }));                        // Открываем страницу с полной новостью                        window.location.href = 'news-detail.html';                    });                });                // Инициализируем карусель                initCarousel();                // Запускаем автоматическую прокрутку                startAutoScroll();            })            .catch(error => {                console.error('Ошибка:', error);                showError('Не удалось загрузить новости. Попробуйте позже.');            });        function showError(message) {            carousel.innerHTML = `                    <div class="news-card active" style="justify-content: center; align-items: center;">                        <div style="text-align: center; padding: 2rem;">                            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>                            <h3 style="margin-bottom: 0.5rem;">Ошибка загрузки</h3>                            <p>${message}</p>                        </div>                    </div>                `;        }        function initCarousel() {            if (newsItems.length === 0) return;            // Устанавливаем начальные классы            updateCarousel();            // Обработчики кнопок            prevBtn.addEventListener('click', prevSlide);            nextBtn.addEventListener('click', nextSlide);            // Обработчики свайпов для мобильных устройств            let touchStartX = 0;            let touchEndX = 0;            carousel.addEventListener('touchstart', (e) => {                touchStartX = e.changedTouches[0].screenX;            });            carousel.addEventListener('touchend', (e) => {                touchEndX = e.changedTouches[0].screenX;                handleSwipe();            });        }        function handleSwipe() {            const threshold = 50;            if (touchStartX - touchEndX > threshold) {                nextSlide();            } else if (touchEndX - touchStartX > threshold) {                prevSlide();            }        }        function prevSlide() {            currentIndex = (currentIndex - 1 + newsItems.length) % newsItems.length;            updateCarousel();            resetAutoScroll();        }        function nextSlide() {            currentIndex = (currentIndex + 1) % newsItems.length;            updateCarousel();            resetAutoScroll();        }        function goToSlide(index) {            currentIndex = index;            updateCarousel();            resetAutoScroll();        }        function updateCarousel() {            // Обновляем классы для всех карточек            newsItems.forEach((card, index) => {                card.classList.remove('active', 'prev', 'next');                if (index === currentIndex) {                    card.classList.add('active');                } else if (                    index === (currentIndex - 1 + newsItems.length) % newsItems.length                ) {                    card.classList.add('prev');                } else if (                    index === (currentIndex + 1) % newsItems.length                ) {                }            });            // Обновляем пагинацию            const dots = document.querySelectorAll('.pagination-dot');            dots.forEach((dot, index) => {                dot.classList.toggle('active', index === currentIndex);            });        }        function startAutoScroll() {            autoScrollInterval = setInterval(nextSlide, 5000);        }        function resetAutoScroll() {            clearInterval(autoScrollInterval);            startAutoScroll();        }        // Остановить автоскролл при наведении        carousel.addEventListener('mouseenter', () => {            clearInterval(autoScrollInterval);        });        // Возобновить автоскролл при уходе курсора        carousel.addEventListener('mouseleave', () => {            resetAutoScroll();        });    });</script></body></html>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Pulse | Новостная карусель</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FE2C55;
+            --secondary: #25F4EE;
+            --dark: #121212;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --card-width: 80vw;
+            --card-height: 70vh;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            src: url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        }
+
+        header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 1.8rem;
+        }
+
+        .carousel-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 2rem;
+            margin-top: 80px;
+        }
+
+        .carousel {
+            display: flex;
+            width: var(--card-width);
+            height: var(--card-height);
+            position: relative;
+            perspective: 1000px;
+        }
+
+        .news-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgb(62, 62, 62);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgb(66, 66, 66);
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateX(100%) scale(0.8);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        .news-card.active {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            z-index: 10;
+        }
+
+        .news-card.prev {
+            opacity: 0.7;
+            transform: translateX(-80%) scale(0.85);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .news-card.next {
+            opacity: 0.7;
+            transform: translateX(80%) scale(0.85);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Анимация для пагинации */
+        .pagination-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+
+        /* Анимация для кнопок навигации */
+        .nav-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+
+        .news-card.active {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            z-index: 10;
+        }
+
+        .news-image-container {
+            height: 60%;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .news-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .news-card:hover .news-image {
+            transform: scale(1.05);
+        }
+
+        .no-image {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(135deg, #FE2C55, #25F4EE);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .news-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: 40%;
+        }
+
+        .news-date {
+            color: var(--secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .news-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .news-excerpt {
+            color: rgb(225, 250, 251);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+            flex: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .read-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .read-more:hover {
+            color: var(--secondary);
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .prev-btn {
+            left: 2rem;
+        }
+
+        .next-btn {
+            right: 2rem;
+        }
+
+        .pagination {
+            position: absolute;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 20;
+        }
+
+
+        .loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--light);
+            font-weight: 500;
+        }
+
+        footer {
+            padding: 1.5rem;
+            text-align: center;
+            background: rgba(18, 18, 18, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --card-width: 90vw;
+                --card-height: 65vh;
+            }
+
+            header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .news-title {
+                font-size: 1.2rem;
+            }
+
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+
+            .prev-btn {
+                left: 0.5rem;
+            }
+
+            .next-btn {
+                right: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="logo">
+        <i class="fas fa-play-circle logo-icon"></i>
+        <span>TikTok Pulse</span>
+    </div>
+</header>
+
+<div class="carousel-container">
+    <button class="nav-btn prev-btn" id="prevBtn">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <div class="carousel" id="carousel">
+        <div class="loader">
+            <div class="spinner"></div>
+            <div class="loading-text">Загрузка новостей...</div>
+        </div>
+    </div>
+
+    <button class="nav-btn next-btn" id="nextBtn">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<footer>
+    © 2025 TikTok Pulse | Сделано IGstar
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rssUrl = 'http://feed.vk4rss.ru/xml/44b023ead183dfc5bb6aab138920131b.xml';
+        const carousel = document.getElementById('carousel');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const pagination = document.getElementById('pagination');
+
+        let newsItems = [];
+        let currentIndex = 0;
+        let autoScrollInterval;
+
+        // Используем CORS-прокси
+        const proxyUrl = 'https://api.allorigins.win/get?url=';
+
+        fetch(proxyUrl + encodeURIComponent(rssUrl))
+            .then(response => {
+                if (!response.ok) throw new Error('Ошибка сети');
+                return response.json();
+            })
+            .then(data => {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
+                const items = xmlDoc.querySelectorAll('item');
+
+                if (items.length === 0) {
+                    showError('Новости не найдены');
+                    return;
+                }
+
+                // Очищаем загрузчик
+                carousel.innerHTML = '';
+
+                // Создаем карточки для новостей
+                items.forEach((item, index) => {
+                    const title = 'TikTok Pulse';
+                    const description = item.querySelector('description')?.textContent || '';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '#';
+                    const guid = item.querySelector('guid')?.textContent || link;
+
+                    // Извлекаем первую картинку из описания
+                    let imageUrl = '';
+                    const enclosure = item.querySelector('enclosure');
+                    if (enclosure) {
+                        imageUrl = enclosure.getAttribute('url');
+                    }
+
+                    // Форматируем дату
+                    let formattedDate = '';
+                    if (pubDate) {
+                        const dateObj = new Date(pubDate);
+                        formattedDate = dateObj.toLocaleDateString('ru-RU', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+
+                    // Очищаем текст от HTML-тегов
+                    const cleanText = description.replace(/<[^>]*>?/gm, '');
+
+                    // Создаем элемент карточки
+                    const card = document.createElement('div');
+                    card.className = 'news-card';
+                    card.dataset.index = index;
+                    card.innerHTML = `
+                            <div class="news-image-container">
+                                ${imageUrl
+                        ? `<img src="${imageUrl}" class="news-image" alt="${title}">`
+                        : `<div class="no-image">TikTok News</div>`
+                    }
+                            </div>
+                            <div class="news-content">
+                                <span class="news-date">${formattedDate}</span>
+                                <h3 class="news-title">${title}</h3>
+                                <p class="news-excerpt">${cleanText.substring(0, 200)}...</p>
+                                <a href="javascript:void(0);" class="read-more" data-guid="${guid}" data-title="${encodeURIComponent(title)}" data-description="${encodeURIComponent(cleanText)}" data-image="${encodeURIComponent(imageUrl)}" data-date="${encodeURIComponent(formattedDate)}">
+                                    Читать полностью <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        `;
+
+                    carousel.appendChild(card);
+                    newsItems.push(card);
+
+                    // Добавляем точку пагинации
+                    const dot = document.createElement('div');
+                    dot.className = 'pagination-dot';
+                    dot.dataset.index = index;
+                    dot.addEventListener('click', () => goToSlide(index));
+                    pagination.appendChild(dot);
+                });
+
+                // Добавляем обработчики для кнопок "Читать полностью"
+                document.querySelectorAll('.read-more').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const guid = this.getAttribute('data-guid');
+                        const title = decodeURIComponent(this.getAttribute('data-title'));
+                        const description = decodeURIComponent(this.getAttribute('data-description'));
+                        const image = decodeURIComponent(this.getAttribute('data-image'));
+                        const date = decodeURIComponent(this.getAttribute('data-date'));
+
+                        // Сохраняем данные новости в sessionStorage
+                        sessionStorage.setItem('currentNews', JSON.stringify({
+                            title: title,
+                            description: description,
+                            image: image,
+                            date: date,
+                            guid: guid
+                        }));
+
+                        // Открываем страницу с полной новостью
+                        window.location.href = 'news-detail.html';
+                    });
+                });
+
+                // Инициализируем карусель
+                initCarousel();
+
+                // Запускаем автоматическую прокрутку
+                startAutoScroll();
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                showError('Не удалось загрузить новости. Попробуйте позже.');
+            });
+
+        function showError(message) {
+            carousel.innerHTML = `
+                    <div class="news-card active" style="justify-content: center; align-items: center;">
+                        <div style="text-align: center; padding: 2rem;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--primary); margin-bottom: 1rem;"></i>
+                            <h3 style="margin-bottom: 0.5rem;">Ошибка загрузки</h3>
+                            <p>${message}</p>
+                        </div>
+                    </div>
+                `;
+        }
+
+        function initCarousel() {
+            if (newsItems.length === 0) return;
+
+            // Устанавливаем начальные классы
+            updateCarousel();
+
+            // Обработчики кнопок
+            prevBtn.addEventListener('click', prevSlide);
+            nextBtn.addEventListener('click', nextSlide);
+
+            // Обработчики свайпов для мобильных устройств
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            carousel.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+
+            carousel.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+        }
+
+        function handleSwipe() {
+            const threshold = 50;
+
+            if (touchStartX - touchEndX > threshold) {
+                nextSlide();
+            } else if (touchEndX - touchStartX > threshold) {
+                prevSlide();
+            }
+        }
+
+        function prevSlide() {
+            currentIndex = (currentIndex - 1 + newsItems.length) % newsItems.length;
+            updateCarousel();
+            resetAutoScroll();
+        }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % newsItems.length;
+            updateCarousel();
+            resetAutoScroll();
+        }
+
+        function goToSlide(index) {
+            currentIndex = index;
+            updateCarousel();
+            resetAutoScroll();
+        }
+
+        function updateCarousel() {
+            // Обновляем классы для всех карточек
+            newsItems.forEach((card, index) => {
+                card.classList.remove('active', 'prev', 'next');
+
+                if (index === currentIndex) {
+                    card.classList.add('active');
+                } else if (
+                    index === (currentIndex - 1 + newsItems.length) % newsItems.length
+                ) {
+                    card.classList.add('prev');
+                } else if (
+                    index === (currentIndex + 1) % newsItems.length
+                ) {
+                }
+            });
+
+            // Обновляем пагинацию
+            const dots = document.querySelectorAll('.pagination-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
+
+        function startAutoScroll() {
+            autoScrollInterval = setInterval(nextSlide, 10000);
+        }
+
+        function resetAutoScroll() {
+            clearInterval(autoScrollInterval);
+            startAutoScroll();
+        }
+
+        // Остановить автоскролл при наведении
+        carousel.addEventListener('mouseenter', () => {
+            clearInterval(autoScrollInterval);
+        });
+
+        // Возобновить автоскролл при уходе курсора
+        carousel.addEventListener('mouseleave', () => {
+            resetAutoScroll();
+        });
+    });
+</script>
+</body>
+</html>
